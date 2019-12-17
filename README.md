@@ -6,7 +6,7 @@ cd wint-cli
 touch .wintrc
 ```
 
-Add your Wint app variables to the `wintrc` file.
+Add your Wint app variables to `.wintrc`.
 
 ```
 export WINT_USERNAME=<username>
