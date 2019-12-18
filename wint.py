@@ -1,7 +1,8 @@
 import click
 import requests
 import json
-from terminaltables import AsciiTable
+from colorclass import Color, Windows
+from terminaltables import SingleTable
 
 @click.group()
 @click.option('--username', required = True)
@@ -15,19 +16,84 @@ def main(username, api_key):
 def invoice():
 	pass
 
+@main.group()
+def receipt():
+	pass
+
+@main.group()
+def incominginvoice():
+	pass
+
+@receipt.command()
+def add():
+	print('implement')
+
+@receipt.command()
+def list():
+	global _username
+	global _api_key
+	
+	response = requests.get('https://superkollapi.wint.se/api/Receipt?OrderByProperty=Id&OrderByDescending=true', auth=(_username, _api_key))
+	jsondata = json.loads(response.text)
+
+	data = [['Id', 'DateTime', 'PaymentMethodName', 'CategoryName', 'Amount']]
+	for item in jsondata['Items']:
+		data.append([item['Id'], item['DateTime'], item['PaymentMethodName'], item['CategoryName'], f"{int(round(item['Amount'], 0))} {item['Currency']}"])
+
+	tabledata = SingleTable(data, 'Receipts')
+	tabledata.justify_columns[4] = 'right'
+	print(tabledata.table)
+
+stateCols = {
+	1: 'autoblue',
+	7: 'autogreen',
+	8: 'autobggreen'
+}
+
+def beginColor(state):
+	global stateCols
+	color = stateCols.get(state) or 'autowhite'
+	print(color)
+	return '{' + color + '}'
+	# Color('{autogreen}<10ms{/autogreen}')
+
+def endColor(state):
+	global stateCols
+	color = stateCols.get(state) or 'autowhite'
+	print(color)
+	return '{/' + color +'}'
+	# Color('{autogreen}<10ms{/autogreen}')
+
+
+@incominginvoice.command()
+def list():
+	global _username
+	global _api_key
+
+	# 8: skickad för betalning. 7: betald, 1: bokförs
+	response = requests.get('https://superkollapi.wint.se/api/IncomingInvoice?OrderByProperty=DueDate&OrderByDescending=true', auth=(_username, _api_key))
+	jsondata = json.loads(response.text)
+
+	data = [['DueDate', 'State', 'Supplier', 'Amount']]
+	for item in jsondata['Items']:
+		data.append( [Color(beginColor(item['State']) + item['DueDate'] + endColor(item['State'])), item['State'], item['Supplier']['Name'], f"{int(round(item['Amount'], 0))} {item['Currency']}"])
+
+	tabledata = SingleTable(data, 'Incoming Invoices')
+	print(tabledata.table)
+
 @invoice.command()
 def list():
 	global _username
 	global _api_key
 	
-	response = requests.get('https://superkollapi.wint.se/api/Invoice', auth=(_username, _api_key))
+	response = requests.get('https://superkollapi.wint.se/api/Invoice?OrderByProperty=SerialNumber&OrderByDescending=true', auth=(_username, _api_key))
 	jsondata = json.loads(response.text)
 
-	data = [['#', 'OCR']]
+	data = [['#', 'Date', 'OCR']]
 	for item in jsondata['Items']:
-		data.append([item['SerialNumber'], item['Ocr']])
+		data.append([item['SerialNumber'], item['PostingDate'], item['Ocr']])
 
-	tabledata = AsciiTable(data)
+	tabledata = SingleTable(data, 'Invoices')
 	print(tabledata.table)
 
 if __name__ == "wint":
