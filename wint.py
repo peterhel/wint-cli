@@ -28,6 +28,12 @@ def printRaw(jsondata):
         print(highlight(json.dumps(jsondata, indent=4), lexers.JsonLexer(), formatters.TerminalFormatter()))
         exit()
 
+def fetch(url, **kwargs):
+    response = requests.get(url, **kwargs)
+    jsondata = json.loads(response.text)
+    printRaw(jsondata)
+    return jsondata
+
 @click.group()
 @click.option('--username', required = True)
 @click.option('--api_key', required = True)
@@ -52,6 +58,14 @@ def incominginvoice():
 
 @receipt.command()
 def add():
+    print('not implemented')
+
+@incominginvoice.command()
+@click.option('--bg', required = True)
+@click.option('--orgnr', required = True)
+@click.option('--amount', required = True)
+@click.option('--vat', required = True)
+def add():
     print('implement')
 
 @receipt.command()
@@ -59,10 +73,7 @@ def list():
     global _username
     global _api_key
     
-    response = requests.get('https://superkollapi.wint.se/api/Receipt?OrderByProperty=Id&OrderByDescending=true', auth=(_username, _api_key))
-    jsondata = json.loads(response.text)
-
-    printRaw(jsondata)
+    jsondata = fetch('https://superkollapi.wint.se/api/Receipt?OrderByProperty=Id&OrderByDescending=true', auth=(_username, _api_key))
 
     data = [['Id', 'DateTime', 'PaymentMethodName', 'CategoryName', 'Amount']]
     for item in jsondata['Items']:
@@ -78,8 +89,8 @@ def list():
     global _api_key
 
     # 8: skickad för betalning. 7: betald, 1: bokförs
-    response = requests.get('https://superkollapi.wint.se/api/IncomingInvoice?OrderByProperty=DueDate&OrderByDescending=true', auth=(_username, _api_key))
-    jsondata = json.loads(response.text)
+    jsondata = fetch('https://superkollapi.wint.se/api/IncomingInvoice?OrderByProperty=DueDate&OrderByDescending=true', auth=(_username, _api_key))
+
 
     data = [['DueDate', 'State', 'Supplier', 'Amount']]
     for item in jsondata['Items']:
