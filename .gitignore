@@ -1,2 +1,5 @@
 .wintrc
 __pycache__/
+.idea/
+*-info/
+
